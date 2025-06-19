@@ -21,7 +21,7 @@ A modern real-time chat app built with Node.js, Express, and Socket.io.
 
 1. **Clone the repository:**
     ```bash
-    git clone [<your-repo-url>](https://github.com/jainnirdesh/WebConnect)
+    git clone github.com/jainnirdesh/WebConnect
     cd Unified Mentor/WebConnect
     ```
 
@@ -72,8 +72,8 @@ A modern real-time chat app built with Node.js, Express, and Socket.io.
 
 ## 👤 Author
 
-- Your Name
-- [GitHub Profile](https://github.com/yourusername)
+- Nirdesh Jain
+- [GitHub Profile](https://github.com/jainnirdesh)
 
 ---
 
