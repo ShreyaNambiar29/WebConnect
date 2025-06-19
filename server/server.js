@@ -53,7 +53,7 @@ passport.deserializeUser((obj, done) => done(null, obj));
 passport.use(new GitHubStrategy({
   clientID: process.env.GITHUB_CLIENT_ID,
   clientSecret: process.env.GITHUB_CLIENT_SECRET,
-  callbackURL: "/auth/github/callback"
+  callbackURL: "https://webconnect-gx2z.onrender.com/auth/github/callback"
 }, (accessToken, refreshToken, profile, done) => {
   return done(null, { id: profile.id, username: profile.username, provider: 'github' });
 }));
