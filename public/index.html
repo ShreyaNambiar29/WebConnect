@@ -12,8 +12,6 @@
         <header>
             <h1>Welcome to the WebConnect</h1>
             <div id="user-authentication">
-                <input type="text" id="username" placeholder="Enter your username" />
-                <button id="join-button">Join Chat</button>
             </div>
             <button id="dark-mode-toggle" style="position:absolute;top:18px;right:24px;">🌙</button>
         </header>
@@ -45,12 +43,14 @@
                 <button id="logout-button" style="background:#ff5858;">Logout</button>
             </div>
         </div>
-        <div id="auth-section">
+        <div id="auth-section" style="max-width:400px;margin:auto;">
             <input type="text" id="auth-username" placeholder="Username" />
-            <input type="password" id="auth-password" placeholder="Password" />
-            <button id="login-btn">Login</button>
-            <button id="signup-btn">Sign Up</button>
-            <a href="/auth/github"><button>Login with GitHub</button></a>
+            <input type="password" id="auth-password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;">
+            <div>
+                <button id="login-btn">Login</button>
+                <button id="signup-btn">Sign Up</button>
+                <a href="/auth/github"><button type="button">Login with GitHub</button></a>
+            </div>
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
