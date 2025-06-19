@@ -4,7 +4,8 @@ const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/webconnect');
+require('dotenv').config();
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/webconnect');
 
 // Message schema
 const messageSchema = new mongoose.Schema({
