@@ -4,6 +4,9 @@ const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const passport = require('passport');
+const GitHubStrategy = require('passport-github2').Strategy;
 require('dotenv').config();
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/webconnect');
 
@@ -22,11 +25,38 @@ const roomSchema = new mongoose.Schema({
 });
 const Room = mongoose.model('Room', roomSchema);
 
+// User schema
+const userSchema = new mongoose.Schema({
+    username: { type: String, unique: true },
+    password: String // In production, always hash passwords!
+});
+const User = mongoose.model('User', userSchema);
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'keyboard cat',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+// GitHub Strategy only
+passport.use(new GitHubStrategy({
+  clientID: process.env.GITHUB_CLIENT_ID,
+  clientSecret: process.env.GITHUB_CLIENT_SECRET,
+  callbackURL: "/auth/github/callback"
+}, (accessToken, refreshToken, profile, done) => {
+  return done(null, { id: profile.id, username: profile.username, provider: 'github' });
+}));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -158,6 +188,37 @@ io.on('connection', (socket) => {
             io.to(room).emit('roomDeleted', room);
         }
     });
+});
+
+app.post('/signup', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.json({ success: false, message: 'All fields required.' });
+    const exists = await User.findOne({ username });
+    if (exists) return res.json({ success: false, message: 'Username already exists.' });
+    await new User({ username, password }).save();
+    res.json({ success: true });
+});
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username, password });
+    if (!user) return res.json({ success: false, message: 'Invalid credentials.' });
+    res.json({ success: true });
+});
+
+// GitHub Auth routes only
+app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/' }),
+  (req, res) => {
+    res.redirect('/?user=' + encodeURIComponent(req.user.username));
+  }
+);
+
+app.get('/logout', (req, res) => {
+  req.logout(() => {
+    res.redirect('/');
+  });
 });
 
 server.listen(3000, () => {

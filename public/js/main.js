@@ -90,4 +90,45 @@ document.addEventListener('DOMContentLoaded', () => {
             dropdownMenu.style.display = 'none';
         };
     }
+
+    document.getElementById('login-btn').onclick = async function() {
+        const username = document.getElementById('auth-username').value.trim();
+        const password = document.getElementById('auth-password').value;
+        const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            localStorage.setItem('username', username);
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('room-selection').style.display = 'block';
+        } else {
+            alert(data.message);
+        }
+    };
+
+    document.getElementById('signup-btn').onclick = async function() {
+        const username = document.getElementById('auth-username').value.trim();
+        const password = document.getElementById('auth-password').value;
+        const res = await fetch('/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Signup successful! Please login.');
+        } else {
+            alert(data.message);
+        }
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const user = params.get('user');
+    if (user) {
+        localStorage.setItem('username', user);
+        // Show chat UI, hide login UI, etc.
+    }
 });
