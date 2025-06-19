@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (localStorage.getItem('username')) {
-        userAuthDiv.style.display = 'none';
-        roomSelectionDiv.style.display = 'block';
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('room-selection').style.display = 'block';
     } else {
         roomSelectionDiv.style.display = 'none';
     }
