@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="room-list">
+            <h2>Available Rooms</h2>
+            <ul id="roomList"></ul>
+            <input type="text" id="newRoom" placeholder="Create new room">
+            <button id="createRoomBtn">Create Room</button>
+        </div>
+        <div class="chat-area">
+            <div id="messagesDisplay" class="messages-display"></div>
+            <div class="message-input">
+                <input type="text" id="messageInput" placeholder="Type your message here...">
+                <button id="sendMessageBtn">Send</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/websocket.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Jab user kisi room pe click kare:
+        function joinRoom(room) {
+          window.socket.emit('joinRoom', room, username);
+          // UI me us room ka chat area dikhao
+        }
+
+        // Jab message bhejna ho:
+        function sendMessage(room, message) {
+          window.socket.emit('chatMessage', { room, username, message, time });
+        }
+    </script>
+</body>
+</html>
