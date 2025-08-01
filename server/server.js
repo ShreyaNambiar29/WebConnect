@@ -126,6 +126,7 @@ io.on('connection', (socket) => {
 
   // Room join karna
   socket.on('joinRoom', async (room, username) => {
+    console.log(`User ${username} joining room ${room}`);
     socket.join(room);
     socket.room = room;
     socket.username = username;
@@ -133,12 +134,14 @@ io.on('connection', (socket) => {
     // User list update (as before)
     if (!usersInRooms[room]) usersInRooms[room] = [];
     if (!usersInRooms[room].includes(username)) usersInRooms[room].push(username);
+    console.log(`Users in room ${room}:`, usersInRooms[room]);
     io.to(room).emit('userList', usersInRooms[room]);
 
     // Send message history from DB
     const messages = await Message.find({ room }).limit(50); // last 50 messages
+    console.log(`Sending ${messages.length} message history to ${username} in room ${room}`);
     socket.emit('messageHistory', messages);
-});
+  });
 
   // (Optional) Duplicate username check
   socket.on('setUsername', (username) => {
@@ -184,9 +187,15 @@ io.on('connection', (socket) => {
 
   // Message receive & broadcast
   socket.on('chatMessage', async ({ room, username, message, time }) => {
-    await new Message({ room, username, message, time }).save();
-    io.to(room).emit('chatMessage', { username, message, time });
-});
+    console.log('Received chatMessage:', { room, username, message, time });
+    try {
+      await new Message({ room, username, message, time }).save();
+      console.log('Message saved to DB, broadcasting to room:', room);
+      io.to(room).emit('chatMessage', { username, message, time });
+    } catch (error) {
+      console.error('Error saving/broadcasting message:', error);
+    }
+  });
 
   socket.on('typing', ({ room, username }) => {
         socket.to(room).emit('typing', username);

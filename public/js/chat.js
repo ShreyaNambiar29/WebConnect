@@ -8,19 +8,23 @@ const roomList = document.getElementById('room-list');
 const userList = document.getElementById('user-list');
 const typingIndicator = document.getElementById('typing-indicator');
 const leaveRoomBtn = document.getElementById('leave-room-button');
-const currentRoom = localStorage.getItem('room');
-const username = localStorage.getItem('username');
 
 // Send message on button click
 sendButton.onclick = function() {
     const message = messageInput.value.trim();
-    if (message) {
+    const currentRoom = localStorage.getItem('room');
+    const username = localStorage.getItem('username');
+    
+    if (message && currentRoom && username) {
         if ("Notification" in window && Notification.permission !== "granted") {
             Notification.requestPermission();
         }
         const time = new Date().toLocaleTimeString();
+        console.log('Sending message:', { room: currentRoom, username, message, time });
         socket.emit('chatMessage', { room: currentRoom, username, message, time });
         messageInput.value = '';
+    } else {
+        console.error('Missing required data:', { message: !!message, currentRoom, username });
     }
 };
 
@@ -54,6 +58,8 @@ function playNotificationSound() {
 
 // Receive and display messages
 socket.on('chatMessage', ({ username: sender, message, time }) => {
+    console.log('Received message:', { sender, message, time });
+    
     const msgDiv = document.createElement('div');
     msgDiv.style.display = 'flex';
     msgDiv.style.alignItems = 'center';
@@ -75,7 +81,8 @@ socket.on('chatMessage', ({ username: sender, message, time }) => {
     messageDisplay.appendChild(msgDiv);
     messageDisplay.scrollTop = messageDisplay.scrollHeight;
 
-    if (document.hidden && sender !== username && Notification.permission === "granted") {
+    const currentUsername = localStorage.getItem('username');
+    if (document.hidden && sender !== currentUsername && Notification.permission === "granted") {
         new Notification(`New message from ${sender}`, { body: message });
         playNotificationSound();
     }
@@ -88,6 +95,7 @@ socket.on('roomList', (rooms) => {
         const roomItem = document.createElement('li');
         roomItem.textContent = room;
         roomItem.onclick = () => {
+            const username = localStorage.getItem('username');
             localStorage.setItem('room', room);
             socket.emit('joinRoom', room, username);
             document.getElementById('room-selection').style.display = 'none';
@@ -125,6 +133,8 @@ socket.on('userList', (users) => {
 // Leave room button functionality
 if (leaveRoomBtn) {
     leaveRoomBtn.onclick = function() {
+        const currentRoom = localStorage.getItem('room');
+        const username = localStorage.getItem('username');
         socket.emit('leaveRoom', currentRoom, username);
         localStorage.removeItem('room');
         document.getElementById('chat-room').style.display = 'none';
@@ -134,10 +144,27 @@ if (leaveRoomBtn) {
 
 // Load message history
 socket.on('messageHistory', (messages) => {
+    console.log('Received message history:', messages);
     messageDisplay.innerHTML = '';
     messages.forEach(({ username, message, time }) => {
         const msgDiv = document.createElement('div');
-        msgDiv.innerHTML = `<strong>${username}</strong> <span style="font-size:0.8em;color:#888;">[${time}]</span>: ${escapeHTML(message)}`;
+        msgDiv.style.display = 'flex';
+        msgDiv.style.alignItems = 'center';
+        msgDiv.style.marginBottom = '12px';
+
+        const avatar = document.createElement('img');
+        avatar.src = getGravatarUrl(username);
+        avatar.alt = username;
+        avatar.style.width = '32px';
+        avatar.style.height = '32px';
+        avatar.style.borderRadius = '50%';
+        avatar.style.marginRight = '10px';
+
+        const content = document.createElement('div');
+        content.innerHTML = `<strong>${username}</strong> <span style="font-size:0.8em;color:#888;">[${time}]</span><br>${escapeHTML(message)}`;
+
+        msgDiv.appendChild(avatar);
+        msgDiv.appendChild(content);
         messageDisplay.appendChild(msgDiv);
     });
     messageDisplay.scrollTop = messageDisplay.scrollHeight;
@@ -164,6 +191,8 @@ let typingTimeout;
 let typingUsers = new Set();
 
 messageInput.addEventListener('input', function() {
+    const currentRoom = localStorage.getItem('room');
+    const username = localStorage.getItem('username');
     socket.emit('typing', { room: currentRoom, username: username });
     clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => {
@@ -172,6 +201,7 @@ messageInput.addEventListener('input', function() {
 });
 
 socket.on('typing', (user) => {
+    const username = localStorage.getItem('username');
     if (user !== username) {
         typingUsers.add(user);
         typingIndicator.textContent = `${Array.from(typingUsers).join(', ')} is typing...`;
