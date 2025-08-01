@@ -7,7 +7,17 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
 const GitHubStrategy = require('passport-github2').Strategy;
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Validate required environment variables
+const requiredEnvVars = ['MONGODB_URI'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+    console.error('Missing required environment variables:', missingEnvVars);
+    console.error('Please check your .env file in the server directory');
+}
+
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/webconnect');
 
 // Message schema
@@ -49,14 +59,20 @@ app.use(passport.session());
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
-// GitHub Strategy only
-passport.use(new GitHubStrategy({
-  clientID: process.env.GITHUB_CLIENT_ID,
-  clientSecret: process.env.GITHUB_CLIENT_SECRET,
-  callbackURL: "https://webconnect-gx2z.onrender.com/auth/github/callback"
-}, (accessToken, refreshToken, profile, done) => {
-  return done(null, { id: profile.id, username: profile.username, provider: 'github' });
-}));
+// GitHub Strategy - only configure if credentials are available
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+  passport.use(new GitHubStrategy({
+    clientID: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackURL: `${process.env.BASE_URL || 'http://localhost:3000'}/auth/github/callback`
+  }, (accessToken, refreshToken, profile, done) => {
+    return done(null, { id: profile.id, username: profile.username, provider: 'github' });
+  }));
+  console.log('GitHub OAuth configured successfully');
+} else {
+  console.warn('GitHub OAuth not configured - missing GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET');
+  console.warn('Social login will not be available. Please configure OAuth credentials in .env file.');
+}
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -206,14 +222,24 @@ app.post('/login', async (req, res) => {
     res.json({ success: true });
 });
 
-// GitHub Auth routes only
-app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
-app.get('/auth/github/callback',
-  passport.authenticate('github', { failureRedirect: '/' }),
-  (req, res) => {
-    res.redirect('/?user=' + encodeURIComponent(req.user.username));
-  }
-);
+// GitHub Auth routes - only if OAuth is configured
+if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+  app.get('/auth/github', passport.authenticate('github', { scope: ['user:email'] }));
+  app.get('/auth/github/callback',
+    passport.authenticate('github', { failureRedirect: '/' }),
+    (req, res) => {
+      res.redirect('/?user=' + encodeURIComponent(req.user.username));
+    }
+  );
+} else {
+  // Fallback routes when OAuth is not configured
+  app.get('/auth/github', (req, res) => {
+    res.redirect('/?error=' + encodeURIComponent('GitHub OAuth not configured'));
+  });
+  app.get('/auth/github/callback', (req, res) => {
+    res.redirect('/?error=' + encodeURIComponent('GitHub OAuth not configured'));
+  });
+}
 
 app.get('/logout', (req, res) => {
   req.logout(() => {
@@ -221,6 +247,10 @@ app.get('/logout', (req, res) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'Configured' : 'Using default local MongoDB'}`);
+  console.log(`Session Secret: ${process.env.SESSION_SECRET ? 'Configured' : 'Using default (change in production!)'}`);
 });

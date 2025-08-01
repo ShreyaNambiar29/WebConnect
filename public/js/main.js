@@ -18,7 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // GitHub login redirect handling
     const params = new URLSearchParams(window.location.search);
     const user = params.get('user');
-    if (user) {
+    const error = params.get('error');
+    
+    if (error) {
+        alert('OAuth Error: ' + decodeURIComponent(error));
+        // Remove error from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (user) {
         localStorage.setItem('username', user);
         showSection('rooms');
         // Remove ?user=... from URL

@@ -4,7 +4,9 @@
   "description": "A real-time chat application where users can join chat rooms and exchange messages.",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
@@ -16,6 +18,9 @@
     "passport-google-oauth20": "^2.0.0",
     "socket.io": "^4.8.1",
     "ws": "^8.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   },
   "author": "Your Name",
   "license": "MIT",
